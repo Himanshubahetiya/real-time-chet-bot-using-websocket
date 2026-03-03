@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+
+  <div class="auth-card">
+    <h2 id="title">Login</h2>
+
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+
+    <button onclick="submitForm()" id="actionBtn">Login</button>
+
+    <p class="toggle-text">
+      <span id="toggle" onclick="toggleMode()">
+        Don't have an account? Signup
+      </span>
+    </p>
+  </div>
+
+<script>
+let mode = "login";
+
+function toggleMode() {
+  mode = mode === "login" ? "signup" : "login";
+  title.innerText = mode === "login" ? "Login" : "Signup";
+  actionBtn.innerText = mode === "login" ? "Login" : "Signup";
+  toggle.innerText =
+    mode === "login"
+      ? "Don't have an account? Signup"
+      : "Already have an account? Login";
+}
+
+async function submitForm() {
+  const endpoint = mode === "login" ? "/login" : "/signup";
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: username.value,
+      password: password.value
+    })
+  });
+
+  if (mode === "login") {
+    if (!res.ok) {
+      alert("Invalid credentials");
+      return;
+    }
+    const data = await res.json();
+    localStorage.setItem("token", data.token);
+    window.location = "/static/chat.html";
+  } else {
+    alert("Signup successful! Now login.");
+    toggleMode();
+  }
+}
+</script>
+
+</body>
+</html>

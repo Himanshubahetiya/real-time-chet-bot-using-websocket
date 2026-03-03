@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+ 
+</div>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- HEADER -->
+
+
+  <div class="header">
+    Realtime Chat
+  </div>
+  
+
+  <!-- ONLINE USERS -->
+  <div class="users-bar">
+    <span>Online Users:</span>
+    <ul id="users"></ul>
+  </div>
+
+  <!-- TYPING -->
+  <div id="typing"></div>
+
+  <!-- CHAT AREA -->
+  <div id="chat"></div>
+
+  <!-- INPUT BAR -->
+  <div class="chat-input-bar">
+    <input id="msg" placeholder="Message">
+    
+    <select id="to">
+      <option value="">Public</option>
+    </select>
+
+    <label class="file-btn">
+      📎
+      <input type="file" onchange="sendImage(this)">
+    </label>
+
+    <button onclick="send()">➤</button>
+  </div>
+
+  <div class="header">
+  <span>Realtime Chat</span>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+
+</div>
+
+<script>
+/* ================= AUTH ================= */
+const token = localStorage.getItem("token");
+if (!token) {
+  window.location = "/static/auth.html";
+}
+
+/* decode username from JWT */
+const payload = JSON.parse(atob(token.split(".")[1]));
+const myName = payload.username;
+
+/* ================= WEBSOCKET ================= */
+// const ws = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
+const ws = new WebSocket(
+  `ws://${location.hostname}:8000/ws?token=${token}`
+);
+
+ws.onopen = () => console.log("WebSocket connected");
+ws.onclose = () => console.log("WebSocket closed");
+
+/* ================= RECEIVE ================= */
+ws.onmessage = e => {
+  const msg = JSON.parse(e.data);
+
+  /* online users */
+  if (msg.type === "users") {
+    users.innerHTML = "";
+    to.innerHTML = `<option value="">Public</option>`;
+
+    msg.users.forEach(u => {
+      users.innerHTML += `<li>${u}</li>`;
+      if (u !== myName) {
+        to.innerHTML += `<option value="${u}">${u}</option>`;
+      }
+    });
+  }
+
+  /* typing */
+  if (msg.type === "typing") {
+    typing.innerText = `${msg.user} is typing...`;
+    setTimeout(() => typing.innerText = "", 1000);
+  }
+
+  /* public message */
+  if (msg.type === "message") {
+    chat.innerHTML += `
+      <p>
+        <b>${msg.user}</b>
+        ${msg.text}
+      </p>
+    `;
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  /* private message */
+  if (msg.type === "private") {
+    chat.innerHTML += `
+      <p style="color:red">
+        <b>DM ${msg.from}</b>
+        ${msg.text}
+      </p>
+    `;
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  /* image */
+  if (msg.type === "image") {
+    chat.innerHTML += `
+      <p>
+        <b>${msg.user}</b><br>
+        <img src="${msg.data}" width="150">
+      </p>
+    `;
+    chat.scrollTop = chat.scrollHeight;
+  }
+};
+
+
+function send() {
+  const text = msg.value.trim();
+  if (!text) return;
+
+  if (ws.readyState !== WebSocket.OPEN) {
+    alert("Connection lost. Refresh page.");
+    return;
+  }
+
+  ws.send(JSON.stringify({
+    type: to.value ? "private" : "message",
+    to: to.value || null,
+    data: text
+  }));
+
+  msg.value = "";
+}
+
+msg.addEventListener("input", () => {
+  ws.send(JSON.stringify({ type: "typing" }));
+});
+
+msg.addEventListener("keydown", e => {
+  if (e.key === "Enter") send();
+});
+
+function sendImage(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    ws.send(JSON.stringify({
+      type: "image",
+      data: reader.result
+    }));
+  };
+  reader.readAsDataURL(file);
+}
+
+function logout() {
+  // close websocket
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.close();
+  }
+
+  // remove token
+  localStorage.removeItem("token");
+
+  // redirect to auth page
+  window.location = "/static/auth.html";
+}
+
+
+</script>
+
+</body>
+</html>
