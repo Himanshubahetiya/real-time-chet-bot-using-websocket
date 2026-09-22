@@ -1,190 +1,1272 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" href="style.css">
- 
-</div>
+
+  <style>
+
+    /* ================================================= */
+    /* =============== PRIVATE CHAT ==================== */
+    /* ================================================= */
+
+    .private-header {
+
+      display: none;
+
+      align-items: center;
+
+      gap: 12px;
+
+      height: 64px;
+
+      padding: 0 15px;
+
+      background: #f5f5f5;
+
+      border-bottom: 1px solid #ddd;
+
+    }
+
+
+    /* Back button */
+
+    .back-btn {
+
+      border: none;
+
+      background: transparent;
+
+      font-size: 24px;
+
+      color: #111;
+
+      cursor: pointer;
+
+      width: 32px;
+      height: 32px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+    }
+
+
+    /* User information */
+
+    .private-user-info {
+
+      display: flex;
+
+      flex-direction: column;
+
+      justify-content: center;
+
+    }
+
+
+    /* Private username */
+
+    .private-user-name {
+
+      font-weight: 600;
+
+      font-size: 17px;
+
+      color: #111;
+
+    }
+
+
+    /* Online status */
+
+    .private-status {
+
+      display: flex;
+
+      align-items: center;
+
+      gap: 5px;
+
+      font-size: 12px;
+
+      color: #777;
+
+      margin-top: 2px;
+
+    }
+
+
+    /* Online dot */
+
+    .online-dot {
+
+      width: 8px;
+
+      height: 8px;
+
+      background: #25d366;
+
+      border-radius: 50%;
+
+    }
+
+
+    /* ================================================= */
+    /* =============== ONLINE USERS ==================== */
+    /* ================================================= */
+
+    #users {
+
+      list-style: none;
+
+      padding: 0;
+
+      margin: 5px 0;
+
+      display: flex;
+
+      gap: 8px;
+
+      flex-wrap: wrap;
+
+    }
+
+
+    #users li {
+
+      cursor: pointer;
+
+      padding: 7px 12px;
+
+      background: #25d366;
+
+      color: white;
+
+      border-radius: 15px;
+
+      transition: background 0.2s ease;
+
+    }
+
+
+    #users li:hover {
+
+      background: #20bd5a;
+
+    }
+
+  </style>
+
 </head>
+
+
 <body>
+
 
 <div class="app">
 
-  <!-- HEADER -->
 
+  <!-- ================================================= -->
+  <!-- ================= MAIN HEADER =================== -->
+  <!-- ================================================= -->
 
   <div class="header">
-    Realtime Chat
-  </div>
-  
 
-  <!-- ONLINE USERS -->
+    <span id="main-title">
+      Realtime Chat
+    </span>
+
+    <button
+      class="logout-btn"
+      onclick="logout()"
+    >
+      Logout
+    </button>
+
+  </div>
+
+
+  <!-- ================================================= -->
+  <!-- ============== PRIVATE CHAT HEADER ============== -->
+  <!-- ================================================= -->
+
+  <div
+    id="private-header"
+    class="private-header"
+  >
+
+    <button
+      class="back-btn"
+      onclick="backToPublic()"
+    >
+      ←
+    </button>
+
+
+    <div class="private-user-info">
+
+      <div
+        id="private-user-name"
+        class="private-user-name"
+      >
+      </div>
+
+
+      <div class="private-status">
+
+        <span class="online-dot"></span>
+
+        Online
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ================================================= -->
+  <!-- ================= ONLINE USERS =================== -->
+  <!-- ================================================= -->
+
   <div class="users-bar">
-    <span>Online Users:</span>
+
+    <span>
+      Online Users:
+    </span>
+
     <ul id="users"></ul>
+
   </div>
 
-  <!-- TYPING -->
+
+  <!-- ================================================= -->
+  <!-- ================= TYPING ======================== -->
+  <!-- ================================================= -->
+
   <div id="typing"></div>
 
-  <!-- CHAT AREA -->
+
+  <!-- ================================================= -->
+  <!-- ================= CHAT AREA ===================== -->
+  <!-- ================================================= -->
+
   <div id="chat"></div>
 
-  <!-- INPUT BAR -->
+
+  <!-- ================================================= -->
+  <!-- ================= INPUT BAR ===================== -->
+  <!-- ================================================= -->
+
   <div class="chat-input-bar">
-    <input id="msg" placeholder="Message">
-    
-    <select id="to">
-      <option value="">Public</option>
-    </select>
+
+    <input
+      id="msg"
+      placeholder="Message"
+    >
+
+
+    <!-- Attachment -->
 
     <label class="file-btn">
+
       📎
-      <input type="file" onchange="sendImage(this)">
+
+      <input
+        type="file"
+        onchange="sendImage(this)"
+      >
+
     </label>
 
-    <button onclick="send()">➤</button>
+
+    <!-- Send -->
+
+    <button onclick="send()">
+      ➤
+    </button>
+
   </div>
 
-  <div class="header">
-  <span>Realtime Chat</span>
-  <button class="logout-btn" onclick="logout()">Logout</button>
 
 </div>
 
+
 <script>
-/* ================= AUTH ================= */
-const token = localStorage.getItem("token");
+
+
+/* ================================================= */
+/* ================= AUTH =========================== */
+/* ================================================= */
+
+
+const token =
+  localStorage.getItem("token");
+
+
 if (!token) {
-  window.location = "/static/auth.html";
+
+  window.location =
+    "/static/auth.html";
+
 }
 
-/* decode username from JWT */
-const payload = JSON.parse(atob(token.split(".")[1]));
-const myName = payload.username;
 
-/* ================= WEBSOCKET ================= */
-// const ws = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
-const ws = new WebSocket(
-  `ws://${location.hostname}:8000/ws?token=${token}`
-);
+/* Decode JWT */
 
-ws.onopen = () => console.log("WebSocket connected");
-ws.onclose = () => console.log("WebSocket closed");
+const payload =
+  JSON.parse(
+    atob(token.split(".")[1])
+  );
 
-/* ================= RECEIVE ================= */
-ws.onmessage = e => {
-  const msg = JSON.parse(e.data);
 
-  /* online users */
-  if (msg.type === "users") {
-    users.innerHTML = "";
-    to.innerHTML = `<option value="">Public</option>`;
+const myName =
+  payload.username;
 
-    msg.users.forEach(u => {
-      users.innerHTML += `<li>${u}</li>`;
-      if (u !== myName) {
-        to.innerHTML += `<option value="${u}">${u}</option>`;
-      }
+
+/* ================================================= */
+/* ============== CURRENT CHAT ===================== */
+/* ================================================= */
+
+
+/*
+  null
+  ↓
+  Public chat
+
+
+  "Rahul"
+  ↓
+  Private chat with Rahul
+*/
+
+
+let selectedUser = null;
+
+
+/* ================================================= */
+/* ================= DOM ============================ */
+/* ================================================= */
+
+
+const users =
+  document.getElementById("users");
+
+
+const chat =
+  document.getElementById("chat");
+
+
+const msg =
+  document.getElementById("msg");
+
+
+const typing =
+  document.getElementById("typing");
+
+
+const privateHeader =
+  document.getElementById("private-header");
+
+
+const privateUserName =
+  document.getElementById(
+    "private-user-name"
+  );
+
+
+const mainTitle =
+  document.getElementById(
+    "main-title"
+  );
+
+
+/* ================================================= */
+/* ============ LOAD PUBLIC MESSAGES =============== */
+/* ================================================= */
+
+
+async function loadMessages() {
+
+  try {
+
+    const response =
+      await fetch("/messages");
+
+
+    if (!response.ok) {
+
+      console.log(
+        "Failed to load messages"
+      );
+
+      return;
+
+    }
+
+
+    const messages =
+      await response.json();
+
+
+    chat.innerHTML = "";
+
+
+    messages.forEach(message => {
+
+      chat.innerHTML += `
+
+        <p>
+
+          <b>
+            ${message.sender}
+          </b>
+
+          ${message.message}
+
+        </p>
+
+      `;
+
     });
+
+
+    chat.scrollTop =
+      chat.scrollHeight;
+
+
   }
 
-  /* typing */
-  if (msg.type === "typing") {
-    typing.innerText = `${msg.user} is typing...`;
-    setTimeout(() => typing.innerText = "", 1000);
+  catch (error) {
+
+    console.log(
+      "Error loading messages:",
+      error
+    );
+
   }
 
-  /* public message */
-  if (msg.type === "message") {
-    chat.innerHTML += `
-      <p>
-        <b>${msg.user}</b>
-        ${msg.text}
-      </p>
-    `;
-    chat.scrollTop = chat.scrollHeight;
+}
+
+
+/* ================================================= */
+/* ============ LOAD PRIVATE MESSAGES ============== */
+/* ================================================= */
+
+
+async function loadPrivateMessages(
+  username
+) {
+
+  try {
+
+    const response =
+      await fetch(
+        `/private-messages/${username}`
+      );
+
+
+    if (!response.ok) {
+
+      console.log(
+        "Failed to load private messages"
+      );
+
+      return;
+
+    }
+
+
+    const messages =
+      await response.json();
+
+
+    chat.innerHTML = "";
+
+
+    messages.forEach(message => {
+
+
+      /* ========================================= */
+      /* ============== MY MESSAGE =============== */
+      /* ========================================= */
+
+
+      if (
+        message.sender === myName
+      ) {
+
+        chat.innerHTML += `
+
+          <div class="message-row message-right">
+
+            <div class="message-bubble">
+
+              <span class="message-sender">
+                You
+              </span>
+
+              <span class="message-text">
+                ${message.message}
+              </span>
+
+            </div>
+
+          </div>
+
+        `;
+
+      }
+
+
+      /* ========================================= */
+      /* =========== OTHER USER MESSAGE ========== */
+      /* ========================================= */
+
+
+      else {
+
+        chat.innerHTML += `
+
+          <div class="message-row message-left">
+
+            <div class="message-bubble">
+
+              <span class="message-sender">
+                ${message.sender}
+              </span>
+
+              <span class="message-text">
+                ${message.message}
+              </span>
+
+            </div>
+
+          </div>
+
+        `;
+
+      }
+
+    });
+
+
+    chat.scrollTop =
+      chat.scrollHeight;
+
+
   }
 
-  /* private message */
-  if (msg.type === "private") {
-    chat.innerHTML += `
-      <p style="color:red">
-        <b>DM ${msg.from}</b>
-        ${msg.text}
-      </p>
-    `;
-    chat.scrollTop = chat.scrollHeight;
+  catch (error) {
+
+    console.log(
+      "Error loading private messages:",
+      error
+    );
+
   }
 
-  /* image */
-  if (msg.type === "image") {
-    chat.innerHTML += `
-      <p>
-        <b>${msg.user}</b><br>
-        <img src="${msg.data}" width="150">
-      </p>
-    `;
-    chat.scrollTop = chat.scrollHeight;
-  }
+}
+
+
+/* ================================================= */
+/* ============== OPEN PRIVATE CHAT ================ */
+/* ================================================= */
+
+
+async function openPrivateChat(
+  username
+) {
+
+  selectedUser =
+    username;
+
+
+  /* Change main title */
+
+  mainTitle.innerText =
+    "Private Chat";
+
+
+  /* Show selected user */
+
+  privateUserName.innerText =
+    username;
+
+
+  /* Show private header */
+
+  privateHeader.style.display =
+    "flex";
+
+
+  /* Hide online users */
+
+  document
+    .querySelector(".users-bar")
+    .style.display = "none";
+
+
+  /* Clear typing */
+
+  typing.innerText = "";
+
+
+  /* Load private history */
+
+  await loadPrivateMessages(
+    username
+  );
+
+
+  /* Focus input */
+
+  msg.focus();
+
+}
+
+
+/* ================================================= */
+/* ============== BACK TO PUBLIC =================== */
+/* ================================================= */
+
+
+async function backToPublic() {
+
+  selectedUser = null;
+
+
+  /* Change title */
+
+  mainTitle.innerText =
+    "Realtime Chat";
+
+
+  /* Hide private header */
+
+  privateHeader.style.display =
+    "none";
+
+
+  /* Show users */
+
+  document
+    .querySelector(".users-bar")
+    .style.display = "flex";
+
+
+  /* Clear typing */
+
+  typing.innerText = "";
+
+
+  /* Load public messages */
+
+  await loadMessages();
+
+
+  /* Focus input */
+
+  msg.focus();
+
+}
+
+
+/* ================================================= */
+/* ================= WEBSOCKET ===================== */
+/* ================================================= */
+
+
+const ws =
+  new WebSocket(
+
+    `ws://${location.hostname}:8000/ws?token=${token}`
+
+  );
+
+
+/* Load public messages */
+
+loadMessages();
+
+
+/* ================================================= */
+/* ================= WS OPEN ======================= */
+/* ================================================= */
+
+
+ws.onopen = () => {
+
+  console.log(
+    "WebSocket connected"
+  );
+
 };
 
 
-function send() {
-  const text = msg.value.trim();
-  if (!text) return;
+/* ================================================= */
+/* ================= WS CLOSE ====================== */
+/* ================================================= */
 
-  if (ws.readyState !== WebSocket.OPEN) {
-    alert("Connection lost. Refresh page.");
-    return;
+
+ws.onclose = () => {
+
+  console.log(
+    "WebSocket closed"
+  );
+
+};
+
+
+/* ================================================= */
+/* ================= RECEIVE ======================= */
+/* ================================================= */
+
+
+ws.onmessage = e => {
+
+  const data =
+    JSON.parse(e.data);
+
+
+  /* ============================================== */
+  /* ================ ONLINE USERS ================ */
+  /* ============================================== */
+
+
+  if (
+    data.type === "users"
+  ) {
+
+    users.innerHTML = "";
+
+
+    data.users.forEach(
+      username => {
+
+
+        /* Don't show myself */
+
+        if (
+          username === myName
+        ) {
+
+          return;
+
+        }
+
+
+        users.innerHTML += `
+
+          <li
+            onclick="openPrivateChat('${username}')"
+          >
+
+            👤 ${username}
+
+          </li>
+
+        `;
+
+      }
+    );
+
   }
 
-  ws.send(JSON.stringify({
-    type: to.value ? "private" : "message",
-    to: to.value || null,
-    data: text
-  }));
+
+  /* ============================================== */
+  /* ================= TYPING ===================== */
+  /* ============================================== */
+
+
+  if (
+    data.type === "typing"
+  ) {
+
+
+    /* Public chat */
+
+    if (!selectedUser) {
+
+      typing.innerText =
+        `${data.user} is typing...`;
+
+    }
+
+
+    /* Private chat */
+
+    else if (
+      data.user === selectedUser
+    ) {
+
+      typing.innerText =
+        `${data.user} is typing...`;
+
+    }
+
+
+    setTimeout(
+      () => {
+
+        typing.innerText = "";
+
+      },
+      1000
+    );
+
+  }
+
+
+  /* ============================================== */
+  /* ================ PUBLIC MESSAGE ============== */
+  /* ============================================== */
+
+
+  if (
+    data.type === "message"
+  ) {
+
+
+    /* Don't show public message
+       inside private chat */
+
+    if (selectedUser) {
+
+      return;
+
+    }
+
+
+    chat.innerHTML += `
+
+      <p>
+
+        <b>
+          ${data.user}
+        </b>
+
+        ${data.text}
+
+      </p>
+
+    `;
+
+
+    chat.scrollTop =
+      chat.scrollHeight;
+
+  }
+
+
+  /* ============================================== */
+  /* ================ PRIVATE MESSAGE ============= */
+  /* ============================================== */
+
+
+  if (
+    data.type === "private"
+  ) {
+
+
+    /* Private chat isn't open */
+
+    if (!selectedUser) {
+
+      return;
+
+    }
+
+
+    /* Message came from
+       currently selected user */
+
+    if (
+      data.from === selectedUser
+    ) {
+
+      chat.innerHTML += `
+
+        <div class="message-row message-left">
+
+          <div class="message-bubble">
+
+            <span class="message-sender">
+              ${data.from}
+            </span>
+
+            <span class="message-text">
+              ${data.text}
+            </span>
+
+          </div>
+
+        </div>
+
+      `;
+
+
+      chat.scrollTop =
+        chat.scrollHeight;
+
+    }
+
+  }
+
+
+  /* ============================================== */
+  /* ================= IMAGE ======================= */
+  /* ============================================== */
+
+
+  if (
+    data.type === "image"
+  ) {
+
+
+    /* Public image */
+
+    if (!selectedUser) {
+
+      chat.innerHTML += `
+
+        <p>
+
+          <b>
+            ${data.user}
+          </b>
+
+          <br>
+
+          <img
+            src="${data.data}"
+            width="150"
+          >
+
+        </p>
+
+      `;
+
+
+      chat.scrollTop =
+        chat.scrollHeight;
+
+    }
+
+  }
+
+};
+
+
+/* ================================================= */
+/* ================= SEND MESSAGE ================== */
+/* ================================================= */
+
+
+function send() {
+
+  const text =
+    msg.value.trim();
+
+
+  if (!text) {
+
+    return;
+
+  }
+
+
+  /* Check WebSocket */
+
+  if (
+    ws.readyState !==
+    WebSocket.OPEN
+  ) {
+
+    alert(
+      "Connection lost. Refresh page."
+    );
+
+    return;
+
+  }
+
+
+  /* ============================================== */
+  /* ================ PRIVATE ===================== */
+  /* ============================================== */
+
+
+  if (selectedUser) {
+
+
+    /* Send to selected user */
+
+    ws.send(
+
+      JSON.stringify({
+
+        type: "private",
+
+        to: selectedUser,
+
+        data: text
+
+      })
+
+    );
+
+
+    /* Show my message
+       immediately on RIGHT */
+
+    chat.innerHTML += `
+
+      <div class="message-row message-right">
+
+        <div class="message-bubble">
+
+          <span class="message-sender">
+            You
+          </span>
+
+          <span class="message-text">
+            ${text}
+          </span>
+
+        </div>
+
+      </div>
+
+    `;
+
+
+    chat.scrollTop =
+      chat.scrollHeight;
+
+  }
+
+
+  /* ============================================== */
+  /* ================= PUBLIC ===================== */
+  /* ============================================== */
+
+
+  else {
+
+    ws.send(
+
+      JSON.stringify({
+
+        type: "message",
+
+        data: text
+
+      })
+
+    );
+
+  }
+
+
+  /* Clear input */
 
   msg.value = "";
+
 }
 
-msg.addEventListener("input", () => {
-  ws.send(JSON.stringify({ type: "typing" }));
-});
 
-msg.addEventListener("keydown", e => {
-  if (e.key === "Enter") send();
-});
+/* ================================================= */
+/* ================= TYPING ======================== */
+/* ================================================= */
+
+
+msg.addEventListener(
+  "input",
+  () => {
+
+
+    if (
+      ws.readyState ===
+      WebSocket.OPEN
+    ) {
+
+      ws.send(
+
+        JSON.stringify({
+
+          type: "typing"
+
+        })
+
+      );
+
+    }
+
+  }
+);
+
+
+/* ================================================= */
+/* ================ ENTER TO SEND ================= */
+/* ================================================= */
+
+
+msg.addEventListener(
+  "keydown",
+  e => {
+
+    if (
+      e.key === "Enter"
+    ) {
+
+      send();
+
+    }
+
+  }
+);
+
+
+/* ================================================= */
+/* ================= SEND IMAGE ==================== */
+/* ================================================= */
+
 
 function sendImage(input) {
-  const file = input.files[0];
-  if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    ws.send(JSON.stringify({
-      type: "image",
-      data: reader.result
-    }));
-  };
-  reader.readAsDataURL(file);
-}
+  const file =
+    input.files[0];
 
-function logout() {
-  // close websocket
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.close();
+
+  if (!file) {
+
+    return;
+
   }
 
-  // remove token
-  localStorage.removeItem("token");
 
-  // redirect to auth page
-  window.location = "/static/auth.html";
+  /* WebSocket check */
+
+  if (
+    ws.readyState !==
+    WebSocket.OPEN
+  ) {
+
+    alert(
+      "Connection lost. Refresh page."
+    );
+
+    return;
+
+  }
+
+
+  const reader =
+    new FileReader();
+
+
+  reader.onload = () => {
+
+
+    /* ============================================ */
+    /* ============== PRIVATE IMAGE ============== */
+    /* ============================================ */
+
+
+    if (selectedUser) {
+
+      ws.send(
+
+        JSON.stringify({
+
+          type: "private",
+
+          to: selectedUser,
+
+          data: reader.result
+
+        })
+
+      );
+
+    }
+
+
+    /* ============================================ */
+    /* ================ PUBLIC IMAGE ============== */
+    /* ============================================ */
+
+
+    else {
+
+      ws.send(
+
+        JSON.stringify({
+
+          type: "image",
+
+          data: reader.result
+
+        })
+
+      );
+
+    }
+
+  };
+
+
+  reader.readAsDataURL(file);
+
+
+  /* Reset file input */
+
+  input.value = "";
+
 }
 
+
+/* ================================================= */
+/* ================= LOGOUT ======================== */
+/* ================================================= */
+
+
+function logout() {
+
+
+  if (
+    ws &&
+    ws.readyState ===
+    WebSocket.OPEN
+  ) {
+
+    ws.close();
+
+  }
+
+
+  localStorage.removeItem(
+    "token"
+  );
+
+
+  window.location =
+    "/static/auth.html";
+
+}
 
 </script>
 
+
 </body>
+
 </html>
