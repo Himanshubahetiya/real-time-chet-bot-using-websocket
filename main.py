@@ -45,21 +45,21 @@ async def websocket_endpoint(ws: WebSocket, token: str):
         username = payload["username"]
         active_users[username] = ws
 
-        # 🔔 send online users
+        #  send online users
         await broadcast_users()
 
         while True:
             raw = await ws.receive_text()
             msg = json.loads(raw)
 
-            # 🟢 Typing indicator
+            #  Typing indicator
             if msg["type"] == "typing":
                 await broadcast_except(username, {
                     "type": "typing",
                     "user": username
                 })
 
-            # 💬 Public message
+            #  Public message
             elif msg["type"] == "message":
                 await broadcast({
                     "type": "message",
@@ -67,7 +67,7 @@ async def websocket_endpoint(ws: WebSocket, token: str):
                     "text": msg["data"]
                 })
 
-            # 🖼️ Image/File (base64)
+            #  Image/File (base64)
             elif msg["type"] == "image":
                 await broadcast({
                     "type": "image",
@@ -75,7 +75,7 @@ async def websocket_endpoint(ws: WebSocket, token: str):
                     "data": msg["data"]
                 })
 
-            # 🔐 Private chat
+            #  Private chat
             elif msg["type"] == "private":
                 to = msg["to"]
                 if to in active_users:
